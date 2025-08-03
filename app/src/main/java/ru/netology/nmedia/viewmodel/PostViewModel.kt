@@ -2,8 +2,12 @@ package ru.netology.nmedia.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.*
+import kotlinx.coroutines.launch
+import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.error.NetworkError
 import ru.netology.nmedia.model.FeedModel
+import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.repository.*
 import ru.netology.nmedia.util.SingleLiveEvent
 
@@ -11,16 +15,23 @@ private val empty = Post(
     id = 0,
     content = "",
     author = "",
+    authorAvatar = "",
     likedByMe = false,
     likes = 0,
     published = ""
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryImpl()
-    private val _data = MutableLiveData(FeedModel())
-    val data: LiveData<FeedModel>
-        get() = _data
+    private val repository: PostRepository =
+        PostRepositoryImpl(AppDb.getInstance(application).postDao())
+
+    val data: LiveData<FeedModel> = repository.data.map {
+        FeedModel(posts = it, empty = it.isEmpty())
+    }
+    private val _dataState = MutableLiveData(FeedModelState())
+    val dataState: LiveData<FeedModelState>
+        get() = _dataState
+
     val edited = MutableLiveData(empty)
     private val _postCreated = SingleLiveEvent<Unit>()
     val postCreated: LiveData<Unit>
@@ -34,35 +45,38 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadPosts() {
-        _data.value = FeedModel(loading = true)
-        repository.getAll(
-            object : PostRepository.Callback<List<Post>> {
-                override fun onSuccess(data: List<Post>) {
-                    _data.postValue(FeedModel(posts = data, empty = data.isEmpty()))
-                }
-                override fun onError(error: Throwable) {
-                    _data.postValue(FeedModel(error = true))
-                }
+        viewModelScope.launch {
+            try {
+                _dataState.value = FeedModelState(loading = true)
+                repository.getAll()
+                _dataState.value = FeedModelState()
+            } catch (e: Exception) {
+                _dataState.value = FeedModelState(error = true)
             }
-        )
+        }
+    }
+
+    fun refreshPosts() = viewModelScope.launch {
+        try {
+            _dataState.value = FeedModelState(refreshing = true)
+            repository.getAll()
+            _dataState.value = FeedModelState()
+        } catch (e: Exception) {
+            _dataState.value = FeedModelState(error = true)
+        }
     }
 
     fun save() {
         edited.value?.let {
-            _data.postValue(FeedModel(loading = true))
-            repository.save(
-                it,
-                object : PostRepository.Callback<Post> {
-                    override fun onSuccess(data: Post) {
-                        _postCreated.postValue(Unit)
-                    }
-
-                    override fun onError(error: Throwable) {
-                        _singleError.postValue(Unit)
-                        _data.postValue(FeedModel(error = true))
-                    }
+            _postCreated.value = Unit
+            viewModelScope.launch {
+                try {
+                    repository.save(it)
+                    _dataState.value = FeedModelState()
+                } catch (e: Exception) {
+                    _dataState.value = FeedModelState(error = true)
                 }
-            )
+            }
         }
         edited.value = empty
     }
@@ -79,45 +93,35 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         edited.value = edited.value?.copy(content = text)
     }
 
-    fun likeById(post: Post) {
-        val callback = object : PostRepository.Callback<Post> {
-            override fun onSuccess(data: Post) {
-                val updatedPosts = _data.value?.posts?.map {
-                    if (it.id == data.id) {
-                        data
-                    } else {
-                        it
-                    }
-                }
-                _data.postValue(_data.value?.copy(posts = updatedPosts.orEmpty()))
-            }
-            override fun onError(error: Throwable) {
+    fun likeById(id: Long) {
+        viewModelScope.launch {
+            _dataState.value = FeedModelState(loading = true)
+            try {
+                repository.likeById(id)
+                _dataState.value = FeedModelState()
+            } catch (e: NetworkError) {
+                _dataState.value = FeedModelState(error = true, needRetry = true)
                 _singleError.postValue(Unit)
-                _data.postValue(FeedModel(error = true))
+            } catch (e: Exception) {
+                _dataState.value = FeedModelState(error = true)
+                _singleError.postValue(Unit)
             }
-        }
-        if (post.likedByMe) {
-            repository.unlikeById(post.id, callback)
-        } else {
-            repository.likeById(post.id, callback)
         }
     }
 
     fun removeById(id: Long) {
-        val old = _data.value?.posts.orEmpty()
-        _data.postValue(
-            _data.value?.copy(posts = _data.value?.posts.orEmpty()
-                .filter { it.id != id }
-            )
-        )
-
-        repository.removeById(id, object : PostRepository.Callback<Unit> {
-            override fun onSuccess(data: Unit) {}
-
-            override fun onError(error: Throwable) {
+        viewModelScope.launch {
+            _dataState.value = FeedModelState(loading = true)
+            try {
+                repository.removeById(id)
+                _dataState.value = FeedModelState()
+            } catch (e: NetworkError) {
+                _dataState.value = FeedModelState(error = true, needRetry = true)
                 _singleError.postValue(Unit)
-                _data.postValue(_data.value?.copy(posts = old))
+            } catch (e: Exception) {
+                _dataState.value = FeedModelState(error = true)
+                _singleError.postValue(Unit)
             }
-        })
+        }
     }
 }
