@@ -119,6 +119,19 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun unlikeById (id: Long) {
+        viewModelScope.launch {
+            _dataState.value = FeedModelState(loading = true)
+            try {
+                repository.unlikeById(id)
+                _dataState.value = FeedModelState()
+            } catch (e: NetworkError) {
+                _dataState.value = FeedModelState(error = true, needRetry = true)
+                _singleError.postValue(Unit)
+            }
+        }
+    }
+
     fun removeById(id: Long) {
         viewModelScope.launch {
             _dataState.value = FeedModelState(loading = true)
