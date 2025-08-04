@@ -5,7 +5,7 @@ import androidx.core.net.toUri
 import com.bumptech.glide.Glide
 import ru.netology.nmedia.R
 
-fun ImageView.load(url: String) {
+fun ImageView.loadAvatar(url: String) {
     Glide.with(this)
         .load(url.toUri())
         .circleCrop()
