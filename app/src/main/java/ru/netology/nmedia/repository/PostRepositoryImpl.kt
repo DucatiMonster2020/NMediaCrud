@@ -1,27 +1,29 @@
 package ru.netology.nmedia.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import ru.netology.nmedia.api.PostsApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import ru.netology.nmedia.entity.toEntity
 import ru.netology.nmedia.error.ApiError
+import ru.netology.nmedia.error.AppError
 import ru.netology.nmedia.error.NetworkError
 import ru.netology.nmedia.error.UnknownError
 import java.io.IOException
 
 
 
-class PostRepositoryImpl(
-    private val dao: PostDao,
-): PostRepository {
-    override val data: LiveData<List<Post>> = dao.getAll().map { it.map (PostEntity::toDto) }
+class PostRepositoryImpl(private val dao: PostDao,): PostRepository {
+    override val data = dao.getAll().map { it.map { it.toDto() } }
 
     override suspend fun getAll() {
         try {
-            val response = PostsApi.retrofitService.getAll()
+            val response = PostsApi.service.getAll()
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -38,7 +40,7 @@ class PostRepositoryImpl(
 
     override suspend fun save(post: Post) {
         try {
-            val response = PostsApi.retrofitService.save(post)
+            val response = PostsApi.service.save(post)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -56,11 +58,12 @@ class PostRepositoryImpl(
     override suspend fun removeById(id: Long) {
        try {
            dao.removeById(id)
-           val response = PostsApi.retrofitService.removeById(id)
+           val response = PostsApi.service.removeById(id)
            if (!response.isSuccessful) {
                throw ApiError(response.code(), response.message())
            }
        } catch (e: IOException) {
+           getAll()
            throw NetworkError
        } catch (e: Exception) {
            getAll()
@@ -71,19 +74,49 @@ class PostRepositoryImpl(
     override suspend fun likeById(id: Long) {
        try {
            dao.likeById(id)
-           val response = PostsApi.retrofitService.likeById(id)
+           val response = PostsApi.service.likeById(id)
            if (!response.isSuccessful) {
+               dao.likeById(id)
                throw ApiError(response.code(), response.message())
            }
-           val body = response.body() ?: throw ApiError(response.code(), response.message())
-           val postEntity = PostEntity.fromDto(body)
-           dao.insert(postEntity)
        } catch (e: IOException) {
-           throw UnknownError
+           dao.likeById(id)
+           throw NetworkError
+       } catch (e: Exception) {
+           dao.likeById(id)
+           throw UnknownError()
        }
     }
 
     override suspend fun unlikeById(id: Long) {
-        return likeById(id)
+        try {
+            dao.unlikeById(id)
+            val response = PostsApi.service.unlikeById(id)
+            if (!response.isSuccessful) {
+                dao.likeById(id)
+                throw ApiError(response.code(), response.message())
+            }
+        } catch (e: IOException) {
+            dao.likeById(id)
+            throw NetworkError
+        } catch (e: Exception) {
+            dao.likeById(id)
+            throw UnknownError
+        }
     }
+
+    override fun getNewer(id: Long): Flow<Int> = flow {
+        while (true) {
+            delay(10_000)
+            val response = PostsApi.service.getNewer(id)
+            if (!response.isSuccessful) {
+                throw ApiError(response.code(), response.message())
+            }
+
+            val body = response.body() ?: throw ApiError(response.code(), response.message())
+            dao.insert(body.toEntity())
+            emit(body.size)
+        }
+    }.catch { e -> throw AppError.from(e) }
+
 }

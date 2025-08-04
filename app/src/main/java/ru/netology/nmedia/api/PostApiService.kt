@@ -32,6 +32,9 @@ interface PostsApiService {
     @GET("posts")
     suspend fun getAll(): Response<List<Post>>
 
+    @GET("posts/{id}/newer")
+    suspend fun getNewer(@Path("id") id: Long): Response<List<Post>>
+
     @GET("posts/{id}")
     suspend fun getById(@Path("id") id: Long): Response<Post>
 
@@ -46,10 +49,11 @@ interface PostsApiService {
 
     @DELETE("posts/{id}/likes")
     suspend fun unlikeById(@Path("id") id: Long): Response<Post>
+
 }
 
 object PostsApi {
-    val retrofitService: PostsApiService by lazy {
+    val service: PostsApiService by lazy {
         retrofit.create(PostsApiService::class.java)
     }
 }
