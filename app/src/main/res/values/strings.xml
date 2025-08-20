@@ -22,6 +22,15 @@
     <string name="channel_remote_description">Notifications from remote server</string>
     <string name="description_logo" translatable="false">logo</string>
     <string name="load" translatable="false">Load</string>
+    <string name="menu_save">menu_save</string>
+    <string name="sign_in" translatable="false">sign_in</string>
+    <string name="sign_up" translatable="false">sign-up</string>
+    <string name="sign_out" translatable="false">sign-out</string>
+    <string name="description_photo" translatable="false">description_photo</string>
+    <string name="remove" translatable="false">remove</string>
+    <string name="description_select_photo" translatable="false">description_select_photo</string>
+    <string name="description_take_photo" translatable="false">description_take_photo</string>
+    <string name="string_post_hint_text" translatable="false">string/post_hint_text</string>
     <plurals name="new_posts_count" translatable="false">
     <item quantity="one">%d new post</item>
     <item quantity="other">%d new posts</item>
