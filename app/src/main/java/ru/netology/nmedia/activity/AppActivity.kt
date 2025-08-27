@@ -31,6 +31,12 @@ import javax.inject.Inject
 class AppActivity : AppCompatActivity(R.layout.activity_app) {
 
     @Inject
+    lateinit var firebaseMessaging: FirebaseMessaging
+
+    @Inject
+    lateinit var googleApiAvailability: GoogleApiAvailability
+
+    @Inject
     lateinit var appAuth: AppAuth
 
     private val viewModel: AuthViewModel by viewModels()
@@ -73,17 +79,18 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
             invalidateOptionsMenu()
         }
 
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+        firebaseMessaging.token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
                 println("some stuff happened: ${task.exception}")
                 return@addOnCompleteListener
             }
-
             val token = task.result
             println(token)
         }
 
-        checkGoogleApiAvailability()
+        with(googleApiAvailability) {
+            checkGoogleApiAvailability()
+        }
 
         requestNotificationsPermission()
 
