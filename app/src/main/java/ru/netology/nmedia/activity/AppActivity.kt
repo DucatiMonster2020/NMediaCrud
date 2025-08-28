@@ -84,13 +84,12 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
                 println("some stuff happened: ${task.exception}")
                 return@addOnCompleteListener
             }
+
             val token = task.result
             println(token)
         }
 
-        with(googleApiAvailability) {
-            checkGoogleApiAvailability()
-        }
+        checkGoogleApiAvailability()
 
         requestNotificationsPermission()
 
@@ -145,7 +144,7 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
     }
 
     private fun checkGoogleApiAvailability() {
-        with(GoogleApiAvailability.getInstance()) {
+        with(googleApiAvailability) {
             val code = isGooglePlayServicesAvailable(this@AppActivity)
             if (code == ConnectionResult.SUCCESS) {
                 return@with
@@ -157,9 +156,5 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
             Toast.makeText(this@AppActivity, R.string.google_play_unavailable, Toast.LENGTH_LONG)
                 .show()
         }
-
-       // FirebaseMessaging.getInstance().token.addOnSuccessListener {
-         //   println(it)
-      //  }
     }
 }
