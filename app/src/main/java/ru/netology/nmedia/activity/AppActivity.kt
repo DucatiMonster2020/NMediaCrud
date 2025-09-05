@@ -24,11 +24,14 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.activity.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.ActivityAppBinding
+import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.viewmodel.AuthViewModel
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class AppActivity : AppCompatActivity(R.layout.activity_app) {
+  //  @Inject
+  //  lateinit var repository: PostRepository
 
     @Inject
     lateinit var firebaseMessaging: FirebaseMessaging
@@ -37,7 +40,7 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
     lateinit var googleApiAvailability: GoogleApiAvailability
 
     @Inject
-    lateinit var appAuth: AppAuth
+    lateinit var auth: AppAuth
 
     private val viewModel: AuthViewModel by viewModels()
 
@@ -107,19 +110,19 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
                 when (menuItem.itemId) {
                     R.id.signin -> {
                         // TODO: just hardcode it, implementation must be in homework
-                        appAuth.setAuth(5, "x-token")
+                        auth.setAuth(5, "x-token")
                         true
                     }
 
                     R.id.signup -> {
                         // TODO: just hardcode it, implementation must be in homework
-                        appAuth.setAuth(5, "x-token")
+                        auth.setAuth(5, "x-token")
                         true
                     }
 
                     R.id.signout -> {
                         // TODO: just hardcode it, implementation must be in homework
-                        appAuth.removeAuth()
+                        auth.removeAuth()
                         true
                     }
 

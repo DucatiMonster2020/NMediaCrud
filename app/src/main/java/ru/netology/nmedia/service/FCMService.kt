@@ -26,7 +26,7 @@ class FCMService : FirebaseMessagingService() {
     private val gson = Gson()
 
     @Inject
-    lateinit var appAuth: AppAuth
+    lateinit var auth: AppAuth
 
     override fun onCreate() {
         super.onCreate()
@@ -51,7 +51,7 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        appAuth.sendPushToken(token)
+        auth.sendPushToken(token)
     }
 
     private fun handleLike(content: Like) {
