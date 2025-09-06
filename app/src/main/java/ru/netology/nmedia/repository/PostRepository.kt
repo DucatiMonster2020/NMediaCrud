@@ -9,12 +9,10 @@ import ru.netology.nmedia.dto.Post
 interface PostRepository {
     val data: Flow<PagingData<Post>>
     fun getNewerCount(id: Long): Flow<Int>
-    suspend fun getAll()
     suspend fun likeById(id: Long)
     suspend fun unlikeById(id: Long)
     suspend fun save(post: Post, upload: MediaUpload?)
     suspend fun removeById(id: Long)
     suspend fun upload(upload: MediaUpload): Media
-    suspend fun refreshAll()
     fun invalidatePagingSource()
 }

@@ -83,34 +83,12 @@ class PostViewModel @Inject constructor(
                 when (event) {
                     AppAuth.AuthEvent.LOGIN,
                         AppAuth.AuthEvent.LOGOUT -> {
-                            refreshPosts()
                         repository.invalidatePagingSource()
                         }
                 }
             }
         }
     }
-
- //   fun loadPosts() = viewModelScope.launch {
- //           try {
- //               _dataState.value = FeedModelState(loading = true)
- //               repository.getAll()
- //               _dataState.value = FeedModelState()
- //           } catch (e: Exception) {
- //               _dataState.value = FeedModelState(error = true)
- //           }
- //   }
-
-    fun refreshPosts() = viewModelScope.launch {
-        try {
-            _dataState.value = FeedModelState(refreshing = true)
-            repository.refreshAll()
-            _dataState.value = FeedModelState()
-        } catch (e: Exception) {
-            _dataState.value = FeedModelState(error = true)
-        }
-    }
-
     fun save() {
         edited.value?.let {
             _postCreated.value = Unit

@@ -17,6 +17,17 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
+    fun provideFirebaseMessaging(): FirebaseMessaging {
+        return FirebaseMessaging.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGoogleAvailability(): GoogleApiAvailability {
+        return GoogleApiAvailability.getInstance()
+    }
+    @Provides
+    @Singleton
     fun provideAppAuth(
         @ApplicationContext
         context: Context,

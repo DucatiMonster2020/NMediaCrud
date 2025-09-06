@@ -45,40 +45,9 @@ class PostRepositoryImpl @Inject constructor(
         }
     ).flow
 
-    override suspend fun refreshAll() {
-        try {
-            val response = apiService.getAll()
-            if (!response.isSuccessful) {
-                throw ApiError(response.code(), response.message())
-            }
-            val body = response.body() ?: throw ApiError(response.code(), response.message())
-            dao.insert(posts = body.toEntity())
-        } catch (e: IOException) {
-            throw NetworkError
-        } catch (e: Exception) {
-            throw UnknownError
-        }
-    }
-
     override fun invalidatePagingSource() {
         currentPagingSource?.invalidate()
         currentPagingSource = null
-    }
-
-    override suspend fun getAll() {
-        try {
-            val response = apiService.getAll()
-            if (!response.isSuccessful) {
-                throw ApiError(response.code(), response.message())
-            }
-
-            val body = response.body() ?: throw ApiError(response.code(), response.message())
-            dao.insert(body.toEntity())
-        } catch (e: IOException) {
-            throw NetworkError
-        } catch (e: Exception) {
-            throw UnknownError
-        }
     }
 
     override fun getNewerCount(id: Long): Flow<Int> = flow {
@@ -125,14 +94,15 @@ class PostRepositoryImpl @Inject constructor(
            dao.removeById(id)
            val response = apiService.removeById(id)
            if (!response.isSuccessful) {
+               invalidatePagingSource()
                throw ApiError(response.code(), response.message())
            }
        } catch (e: IOException) {
-           getAll()
+           invalidatePagingSource()
            throw NetworkError
        } catch (e: Exception) {
-           getAll()
-           throw UnknownError
+           invalidatePagingSource()
+           throw UnknownError()
        }
     }
 
@@ -141,13 +111,14 @@ class PostRepositoryImpl @Inject constructor(
            dao.likeById(id)
            val response = apiService.likeById(id)
            if (!response.isSuccessful) {
+               invalidatePagingSource()
                throw ApiError(response.code(), response.message())
            }
        } catch (e: IOException) {
-           dao.likeById(id)
+           invalidatePagingSource()
            throw NetworkError
        } catch (e: Exception) {
-           dao.likeById(id)
+           invalidatePagingSource()
            throw UnknownError()
        }
     }
@@ -160,10 +131,10 @@ class PostRepositoryImpl @Inject constructor(
                 throw ApiError(response.code(), response.message())
             }
         } catch (e: IOException) {
-            dao.likeById(id)
+            invalidatePagingSource()
             throw NetworkError
         } catch (e: Exception) {
-            dao.likeById(id)
+            invalidatePagingSource()
             throw UnknownError()
         }
     }
