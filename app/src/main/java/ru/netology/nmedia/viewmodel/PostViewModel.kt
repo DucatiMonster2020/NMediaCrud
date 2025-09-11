@@ -6,14 +6,12 @@ import androidx.lifecycle.*
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
-import androidx.room.util.copy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import ru.netology.nmedia.api.authInterceptor
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.MediaUpload
 import ru.netology.nmedia.dto.Post
@@ -56,11 +54,11 @@ class PostViewModel @Inject constructor(
             }
         }
 
- //   val newerCount = data.switchMap {
-   //     repository.getNewerCount(it.posts.firstOrNull()?.id ?: 0L)
-     //       .catch { _dataState.postValue(FeedModelState(error = true)) }
-           // .catch { e -> e.printStackTrace() }
-       //     .asLiveData(Dispatchers.Default)
+    //   val newerCount = data.switchMap {
+    //     repository.getNewerCount(it.posts.firstOrNull()?.id ?: 0L)
+    //       .catch { _dataState.postValue(FeedModelState(error = true)) }
+    // .catch { e -> e.printStackTrace() }
+    //     .asLiveData(Dispatchers.Default)
 //    }
 
 
@@ -77,15 +75,41 @@ class PostViewModel @Inject constructor(
     val photo: LiveData<PhotoModel>
         get() = _photo
 
+    private val _refreshState = MutableLiveData(false)
+    val refreshState: LiveData<Boolean>
+        get() = _refreshState
+    private val _refreshResult = SingleLiveEvent<Boolean>()
+    val refreshResult: LiveData<Boolean>
+        get() = _refreshResult
+
     init {
         viewModelScope.launch {
             auth.authEvents.collect { event ->
                 when (event) {
                     AppAuth.AuthEvent.LOGIN,
-                        AppAuth.AuthEvent.LOGOUT -> {
+                    AppAuth.AuthEvent.LOGOUT -> {
                         repository.invalidatePagingSource()
-                        }
+                    }
                 }
+            }
+        }
+    }
+    fun refreshPosts() {
+        _refreshState.value = true
+        viewModelScope.launch {
+            try {
+                val success = repository.loadNewPosts()
+                _refreshResult.value = success
+                if (success) {
+                    _dataState.value = FeedModelState(true)
+                } else {
+                    _dataState.value = FeedModelState(true)
+                }
+            } catch (e: Exception) {
+                _dataState.value = FeedModelState(true)
+                _refreshResult.value = false
+            } finally {
+                _refreshState.value = false
             }
         }
     }
@@ -123,9 +147,9 @@ class PostViewModel @Inject constructor(
         _photo.value = PhotoModel(uri)
     }
 
-       private val _singleError = SingleLiveEvent<Unit>()
-       val singleError: LiveData<Unit>
-           get() = _singleError
+    private val _singleError = SingleLiveEvent<Unit>()
+    val singleError: LiveData<Unit>
+        get() = _singleError
 
     fun likeById(post: Post) {
         viewModelScope.launch {

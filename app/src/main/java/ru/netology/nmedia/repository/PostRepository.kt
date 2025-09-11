@@ -15,4 +15,5 @@ interface PostRepository {
     suspend fun removeById(id: Long)
     suspend fun upload(upload: MediaUpload): Media
     fun invalidatePagingSource()
+    suspend fun loadNewPosts(): Boolean
 }
