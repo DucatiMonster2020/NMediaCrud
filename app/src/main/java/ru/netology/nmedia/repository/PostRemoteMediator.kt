@@ -28,8 +28,13 @@ class PostRemoteMediator(
         return try {
             val result = when (loadType) {
                 LoadType.REFRESH -> {
-                    val latestId = postDao.getLatestPostId() ?: 0L
-                    apiService.getAfter(latestId, state.config.pageSize)
+                    val isEmpty = postDao.getCount() == 0
+                    if (isEmpty) {
+                        apiService.getLatest(state.config.pageSize)
+                    } else {
+                        val latestId = postDao.getLatestPostId() ?: 0L
+                        apiService.getAfter(latestId, state.config.pageSize)
+                    }
                 }
 
                 LoadType.APPEND -> {
@@ -54,8 +59,8 @@ class PostRemoteMediator(
                         if (body.isNotEmpty()) {
                             postDao.insert(body.map { PostEntity.fromDto(it) }
                             )
-                            val existingKeys = postRemoteKeyDao.min()
-                            if (existingKeys == null) {
+                            val isEmpty = postDao.getCount() == body.size
+                            if (isEmpty) {
                                 postRemoteKeyDao.insert(
                                     listOf(
                                         PostRemoteKeyEntity(

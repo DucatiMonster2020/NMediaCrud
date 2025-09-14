@@ -20,7 +20,7 @@ interface PostDao {
     suspend fun isEmpty(): Boolean
 
     @Query("SELECT COUNT(*) FROM PostEntity")
-    suspend fun count(): Int
+    suspend fun getCount(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(post: PostEntity)
