@@ -28,22 +28,22 @@ class PostRemoteMediator(
         return try {
             val result = when (loadType) {
                 LoadType.REFRESH -> {
-                    val isEmpty = postDao.getCount() == 0
-                    if (isEmpty) {
-                        apiService.getLatest(state.config.pageSize)
-                    } else {
-                        val latestId = postDao.getLatestPostId() ?: 0L
-                        apiService.getAfter(latestId, state.config.pageSize)
-                    }
+                    postRemoteKeyDao.clear()
+                    apiService.getLatest(state.config.pageSize)
                 }
 
                 LoadType.APPEND -> {
-                    val id = postRemoteKeyDao.min() ?: return MediatorResult.Success(true)
-                    apiService.getBefore(id, state.config.pageSize)
+                    val minKey = postRemoteKeyDao.min() ?:
+                    return MediatorResult.Success(true)
+                    apiService.getBefore(minKey, state.config.pageSize)
                 }
 
-                LoadType.PREPEND ->
+                LoadType.PREPEND -> {
+                    val maxKey = postRemoteKeyDao.max() ?:
                     return MediatorResult.Success(true)
+                    apiService.getAfter(maxKey, state.config.pageSize)
+                }
+
             }
             if (!result.isSuccessful) {
                 throw ApiError(result.code(), result.message())
@@ -56,6 +56,7 @@ class PostRemoteMediator(
             abbDb.withTransaction {
                 when (loadType) {
                     LoadType.REFRESH -> {
+                        postDao.clear()
                         if (body.isNotEmpty()) {
                             postDao.insert(body.map { PostEntity.fromDto(it) }
                             )
@@ -84,7 +85,17 @@ class PostRemoteMediator(
                         }
                     }
 
-                    LoadType.PREPEND -> {}
+                    LoadType.PREPEND -> {
+                        if (body.isNotEmpty()) {
+                            postDao.insert(
+                                body.map { PostEntity.fromDto(it) })
+                            postRemoteKeyDao.insert(
+                                PostRemoteKeyEntity(
+                                    PostRemoteKeyEntity.KeyType.AFTER,
+                                    body.first().id)
+                            )
+                        }
+                    }
                     LoadType.APPEND -> {
                         if (body.isNotEmpty()) {
                             postDao.insert(body.map { PostEntity.fromDto(it) })
