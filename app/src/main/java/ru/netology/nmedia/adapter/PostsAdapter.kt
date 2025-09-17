@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import ru.netology.nmedia.BuildConfig
 import ru.netology.nmedia.R
-import ru.netology.nmedia.activity.loadAvatar
+import ru.netology.nmedia.activity.load
 import ru.netology.nmedia.databinding.CardAdBinding
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Ad
@@ -65,7 +65,7 @@ class AdViewHolder(
     private val binding: CardAdBinding,
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(ad: Ad) {
-        binding.image.loadAvatar("${BuildConfig.BASE_URL}/media/${ad.image}")
+        binding.image.load("${BuildConfig.BASE_URL}/media/${ad.image}")
     }
 }
 
@@ -80,7 +80,7 @@ class PostViewHolder(
             author.text = post.author
             published.text = post.published.toString()
             content.text = post.content
-            avatar.loadAvatar("${BuildConfig.BASE_URL}/avatars/${post.authorAvatar}")
+            avatar.load("${BuildConfig.BASE_URL}/avatars/${post.authorAvatar}")
             like.isChecked = post.likedByMe
             like.text = "${post.likes}"
 

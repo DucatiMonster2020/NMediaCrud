@@ -1,16 +1,16 @@
 package ru.netology.nmedia.activity
 
 import android.widget.ImageView
-import androidx.core.net.toUri
 import com.bumptech.glide.Glide
-import ru.netology.nmedia.R
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
 
-fun ImageView.loadAvatar(url: String) {
+fun ImageView.load(url: String, vararg transforms: BitmapTransformation = emptyArray()) =
     Glide.with(this)
-        .load(url.toUri())
-        .circleCrop()
-        .error(R.drawable.ic_error_100dp)
-        .placeholder(R.drawable.ic_loading_100dp)
+        .load(url)
         .timeout(10_000)
+        .transform(*transforms)
         .into(this)
-}
+
+fun ImageView.loadCircleCrop(url: String, vararg transforms: BitmapTransformation = emptyArray()) =
+    load(url, CircleCrop(), *transforms)
